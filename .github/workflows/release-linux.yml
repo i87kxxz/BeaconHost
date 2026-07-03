@@ -1,0 +1,55 @@
+name: Release Linux
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish-linux:
+    permissions:
+      contents: write
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: ./src-tauri -> target
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build Linux bundles
+        run: npm run tauri build
+
+      - name: Upload to existing release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: BeaconHost v__VERSION__
+          releaseBody: |
+            ## BeaconHost v__VERSION__ — Linux
+
+            | Format | File |
+            |--------|------|
+            | Debian | `.deb` |
+            | RPM | `.rpm` |
+            | AppImage | `.AppImage` |
+          releaseDraft: false
+          prerelease: false
