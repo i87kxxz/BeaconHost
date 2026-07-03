@@ -1,0 +1,6 @@
+[build]
+incremental = true
+
+# Keep Rust artifacts inside the repo (faster rebuilds, survives sandbox temp dirs).
+[env]
+CARGO_TARGET_DIR = { value = "target", relative = true }
